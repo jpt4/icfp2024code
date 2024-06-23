@@ -46,6 +46,9 @@
 ;of the pseudocode, it suggests an evaluation strategy, without fully
 ;explicating any in particular.
 
+; Explicit implementation of an outer reduction rule:
+; https://github.com/urbit/vere/commit/ddc0f8ac87a7030ba9bdafecf8917611ed3e8b71
+
 ;Narrow adherence to the evaluation rule will quickly reveal the Nock
 ;spec to be insufficient unto itself, because there are right column
 ;patterns without left column matches, for which reduction should not
@@ -74,6 +77,10 @@
 ;input expressions into fully right-associated normal form, and fully
 ;parenthesize all reduction rules.
 
+;There are no indefinite length patterns in the reduction rules, and
+;so full normalization is not required so long as each term of the
+;expression is grammatical.
+
 (define (ras a)
   (match a
    [(? noun) a]
@@ -89,6 +96,12 @@
 
 '[[1 [[2 3 4 5] 6] 7] [8 9] [10 11]]   
 
+;the internal representations of the operators are not, strictly
+;speaking nock expressions, and thus their interpretation need not be
+;homoiconic. If it is desired to interpret NIR (Nock IR) expressions,
+;then `ras` must have a notion of them.
+
+(define (ras-nir a) "ras-nir" )
 
 (define-syntax test
   (syntax-rules ()
