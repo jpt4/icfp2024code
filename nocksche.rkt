@@ -49,6 +49,18 @@
 ; Explicit implementation of an outer reduction rule:
 ; https://github.com/urbit/vere/commit/ddc0f8ac87a7030ba9bdafecf8917611ed3e8b71
 
+; https://github.com/urbit/vere/issues/660
+; *[0 [9 [2 2] 0 1]] -> *[*[a c] 2 [0 1] 0 b]
+;; *[*[0 0 1] 2 [0 1] 0 [2 2]]
+;; *[*[*[0 0 1] [0 1]] *[*[0 0 1] 0 [2 2]]]
+;; *[*[*[0 0 1] [0 1]] /[[2 2] *[0 0 1]]] <- could error here, if inner(most) reduction
+;; *[*[/[1 0] [0 1]] /[[2 2] /[1 0]]]
+;; *[*[0 [0 1]] /[[2 2] 0]]
+;; *[/[1 0] /[[2 2] 0]]
+;; *[0 /[[2 2] 0]]
+;; !
+
+
 ;Narrow adherence to the evaluation rule will quickly reveal the Nock
 ;spec to be insufficient unto itself, because there are right column
 ;patterns without left column matches, for which reduction should not
