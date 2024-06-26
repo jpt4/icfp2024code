@@ -46,6 +46,10 @@
 ;of the pseudocode, it suggests an evaluation strategy, without fully
 ;explicating any in particular.
 
+;"Variables match any noun" suggests that the redexes only operate on
+;terms that have been rendered into nouns, not pending evals, thus
+;strict evaluation.
+
 ; Explicit implementation of an outer reduction rule:
 ; https://github.com/urbit/vere/commit/ddc0f8ac87a7030ba9bdafecf8917611ed3e8b71
 
@@ -60,6 +64,28 @@
 ;; *[0 /[[2 2] 0]]
 ;; !
 
+;; https://github.com/urbit/urbit/issues/4464
+;; .*([3 0 1] [9 1 [0 1]])
+;; *([3 0 1] [9 1 [0 1]])
+;;      a       b   c
+;; *[*[a c] 2 [0 1] 0 b]
+;; *[*[[3 0 1] [0 1]] 2 [0 1] [0 1]]
+;;            a           b     c
+;; *[*[a b] *[a c]]
+;; *[*[*[[3 0 1] [0 1]] [0 1]] *[*[[3 0 1] [0 1]] [0 1]]]
+;;              a          b
+;; *[/[1 *[[3 0 1] [0 1]]] /[1 *[[3 0 1] [0 1]]]]
+;;                a                     a
+;; *[*[[3 0 1] [0 1]] *[[3 0 1] [0 1]]]
+;;        a       b        a       b
+;; *[/[1 [3 0 1]] /[1 [3 0 1]]]
+;; *[[3 0 1] [3 [0 1]]]
+;;      a         b
+;; ?*[[3 0 1] [0 1]]
+;;       a       b
+;; ?/[1 [3 0 1]]
+;; ?[3 [0 1]]
+;; 0
 
 ;Narrow adherence to the evaluation rule will quickly reveal the Nock
 ;spec to be insufficient unto itself, because there are right column
@@ -106,14 +132,60 @@
     ]
    ))
 
-'[[1 [[2 3 4 5] 6] 7] [8 9] [10 11]]   
+;'[[1 [[2 3 4 5] 6] 7] [8 9] [10 11]]   
+
+;We will make the additional distinction between a noun and a Nock
+;Expression (nexp), the latter of which includes the syntax of the
+;internal representations
 
 ;the internal representations of the operators are not, strictly
-;speaking nock expressions, and thus their interpretation need not be
+;speaking, nouns, and thus their interpretation need not be
 ;homoiconic. If it is desired to interpret NIR (Nock IR) expressions,
-;then `ras` must have a notion of them.
+;then `ras` must have a notion of nexps.
+
 
 (define (ras-nir a) "ras-nir" )
+
+(define (nock a) 
+  ;must decide whether to introduce a runtime assert of the type of a
+  (tar (ras a)))
+
+(define (tar a)
+  (match a
+    [_ a]))
+
+;term rewrite nock eval
+(define (neval n)
+  (let ([p
+        (match (ras n)
+          [`(nock ,a) `(tar ,a)] 
+          ;the right association rule is diffused across various
+          ;ras/noun checks; literal implementation would prevent valid
+          ;nexps (e.g. [0 1 0]) from matching any LHS pattern.
+          [`(wut [,a ,b])
+          ; #:when (and (noun a) (noun b))
+           0]
+          [`(wut ,a)
+;           #:when (atom a) ;necessary? could either keep minimal
+                           ;structural LHS, or remove structure from
+                           ;first wut LHS, and check for cell -
+                           ;regression tests should assess this.
+           1]
+          
+          [`(tar [,a 1 ,b])
+           #:when (and (noun a) (noun b)) ;noun checks correspond to
+                                          ;"variables match any noun"
+                                          ;(can per redex noun checks
+                                          ;be replaced by deep ras
+                                          ;upon entry via neval?
+           b]
+
+          [`(tar ,n) #:when (noun n) n]
+          [_ n]
+          )])
+    (if (eq? n p) 
+        p
+        (neval p))))
 
 (define-syntax test
   (syntax-rules ()
@@ -126,8 +198,12 @@
              (printf "Failed: ~a~%Expected: ~a~%Computed: ~a~%"
                      'tested-expression expected produced)))))))
 
+; https://github.com/urbit/urbit/commit/50aaa27ed1e3d181ada436456389541be8d08064
+; reference tests
+
 (define (run-tests)
   (begin
+    ;functional tests
     (test 'valid-noun-atom (noun 5) #t)
     (test 'valid-noun-cell (noun '[0 0]) #t)
 
@@ -148,5 +224,9 @@
     (test 'invalid-cell-long (cell '[5 5 5]) #f)
     (test 'invalid-cell-short (cell '[5]) #f)
 
+    ;term rewrite tests
+    (test 'trw-wut-cell (neval '(wut [0 0])) 0)
+    (test 'trw-wut-atom (neval '(wut 0)) 1)
+    (test 'trw-nock1 (neval '(nock [0 1 0])) 0) 
     
     )) 
