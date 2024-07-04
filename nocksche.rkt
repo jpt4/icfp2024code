@@ -117,18 +117,20 @@
 
 ;There are no indefinite length patterns in the reduction rules, and
 ;so full normalization is not required so long as each term of the
-;expression is grammatical.
+;expression is grammatical. However, this would require per redex
+;checking and ras-ing, so we instead define a general procedure to
+;call at the entry to reduction rules.
 
 (define (ras a)
   (match a
    [(? noun) a]
    [`(,x ,y . ,z)
     #:when (not (null? z))
-    `[,(ras (car a)) ,(ras (cdr a))]
+    (list (ras (car a)) (ras (cdr a)))
     ]
    [`(,x ,y . ,z)
     #:when (null? z)
-    `[,(ras (car a)) . ,(cdr a)]
+    (list (ras (car a)) (ras (cadr a)))
     ]
    ))
 
@@ -143,11 +145,35 @@
 ;homoiconic. If it is desired to interpret NIR (Nock IR) expressions,
 ;then `ras` must have a notion of nexps.
 
+;list of Nock operators
+(define nops '(wut lus tis fas hax tar))
+(define (nop n) (member n nops))
 
-(define (ras-nir a) "ras-nir" )
+(define (nexp e)
+  (match e
+    [`(,n ,a)
+     #:when (and (nop n) (nexp a))
+     #t]
+    [(? noun) e]
+    [_ #f]))
+
+(define (ras-nir a) 
+  (match a
+    [(? nexp) a]
+    [`(,x ,y . ,z)
+     #:when (and (nop x) (null? z))
+     `[,x ,(ras-nir (cdr a))]
+     ]
+    [`(,x ,y . ,z)
+     #:when (and (nop x) (not (null? z)))
+     `[,x ,(ras-nir (cdr a))]
+     ]
+    ))
 
 (define (nock a) 
   ;must decide whether to introduce a runtime assert of the type of a
+  ;- I think yes, ras'ing a is the realization of the spirit of 
+  ;[a b c]=>[a [b c]]
   (tar (ras a)))
 
 (define (tar a)
@@ -228,5 +254,23 @@
     (test 'trw-wut-cell (neval '(wut [0 0])) 0)
     (test 'trw-wut-atom (neval '(wut 0)) 1)
     (test 'trw-nock1 (neval '(nock [0 1 0])) 0) 
-    
+
+#| Convert to tests of `nexp`
+ nocksche.rkt> (nexp '(wut [0 [0 0]]))
+#t
+nocksche.rkt> (nexp '(wut 0 [0 0]))
+#f
+nocksche.rkt> (nexp '(wut 0 0 0))
+#f
+nocksche.rkt> (nexp '(wut))
+#f
+nocksche.rkt> (nexp '(wut 0))
+#t
+nocksche.rkt> (nexp '(0))
+#f
+nocksche.rkt> (nexp 0)
+#f
+nocksche.rkt> 
+|#    
+
     )) 
