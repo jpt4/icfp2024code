@@ -126,15 +126,35 @@
    [(? noun) a]
    [`(,x ,y . ,z)
     #:when (not (null? z))
-    (list (ras (car a)) (ras (cdr a)))
+    `[,(ras (car a)) ,(ras (cdr a))]
     ]
    [`(,x ,y . ,z)
     #:when (null? z)
-    (list (ras (car a)) (ras (cadr a)))
+    `[,(ras (car a)) ,(ras (cadr a))]
     ]
+   [_ 'error-not-a-noun]
    ))
 
 ;'[[1 [[2 3 4 5] 6] 7] [8 9] [10 11]]   
+
+;; racket@nocksche> (ras '(0 (0 0 0 0 0)))
+;; '(0 (0 (0 (0 (0 0)))))
+;; racket@nocksche> racket@nocksche> (ras 0)
+;; 0
+;; racket@nocksche> (ras '(0 0))
+;; '(0 0)
+;; racket@nocksche> (ras '(0 (0 0)))
+;; '(0 (0 0))
+;; racket@nocksche> (ras '(0 (0 0 0)))
+;; '(0 (0 (0 0)))
+;; racket@nocksche> (ras '(0 0 0 (0 0)))
+;; '(0 (0 (0 (0 0))))
+;; racket@nocksche> (ras '((0 0 0) (0 0)))
+;; '((0 (0 0)) (0 0))
+;; racket@nocksche> (ras '((0 0 0) (0 0) 0))
+;; '((0 (0 0)) ((0 0) 0))
+;; racket@nocksche> (ras '((0 (0 0 0) 0) (0 0) 0))
+;; '((0 ((0 (0 0)) 0)) ((0 0) 0)) 
 
 ;We will make the additional distinction between a noun and a Nock
 ;Expression (nexp), the latter of which includes the syntax of the
@@ -154,20 +174,29 @@
     [`(,n ,a)
      #:when (and (nop n) (nexp a))
      #t]
-    [(? noun) e]
+    [(? noun) #t]
     [_ #f]))
 
 (define (ras-nir a) 
   (match a
     [(? nexp) a]
     [`(,x ,y . ,z)
-     #:when (and (nop x) (null? z))
-     `[,x ,(ras-nir (cdr a))]
-     ]
-    [`(,x ,y . ,z)
      #:when (and (nop x) (not (null? z)))
      `[,x ,(ras-nir (cdr a))]
      ]
+    [`(,x ,y . ,z)
+     #:when (and (nop x) (null? z))
+     `[,x ,(ras-nir (cadr a))]
+     ]
+    [`(,x ,y . ,z)
+    #:when (not (null? z))
+    `[,(ras-nir (car a)) ,(ras-nir (cdr a))]
+    ]
+    [`(,x ,y . ,z)
+     #:when (null? z)
+     `[,(ras-nir (car a)) ,(ras-nir (cadr a))]
+     ]
+    [_ 'error-not-a-nexp]
     ))
 
 (define (nock a) 
@@ -181,6 +210,13 @@
     [_ a]))
 
 ;term rewrite nock eval
+#|
+
+decided against `neval` because the goal is to write an interpreter
+for nouns called nock, and `nock` the keyword is the entry point to
+the interpreter, not an element of syntax for either nouns or
+nexps. Thus, this layer of indirection/abstraction is unncessary.
+
 (define (neval n)
   (let ([p
         (match (ras n)
@@ -212,6 +248,7 @@
     (if (eq? n p) 
         p
         (neval p))))
+#|
 
 (define-syntax test
   (syntax-rules ()
