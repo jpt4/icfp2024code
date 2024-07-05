@@ -374,6 +374,15 @@ nexps. Thus, this layer of indirection/abstraction is unncessary.
     (test 'fas-4-atom (fas '[4 0]) 'error-fas)
     (test 'fas-5-atom (fas '[5 0]) 'error-fas)
 
+    (test 'tar0_1 (tar '[0 [0 1]]) 0)
+    (test 'tar0_2 (tar '[[1 2] [0 2]]) 1)
+    (test 'tar0_3 (tar '[[1 2] [0 3]]) 2)
+    (test 'tar0_4 (tar '[[[3 4] 2] [0 4]]) 3)
+    (test 'tar0_5 (tar '[[[3 4] 2] [0 5]]) 4)
+    (test 'tar0_6 (tar '[[[3 4] [5 6]] [0 6]]) 5)
+    (test 'tar0_7 (tar '[[[3 4] [5 6]] [0 7]]) 6)
+    
+
     ;term rewrite tests
 ;    (test 'trw-wut-cell (neval '(wut [0 0])) 0)
  ;   (test 'trw-wut-atom (neval '(wut 0)) 1)
