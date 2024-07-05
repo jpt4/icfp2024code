@@ -7,6 +7,12 @@
 #lang racket
 (require racket/match)
 
+;prior work:
+;https://github.com/nvasilakis/Noq/commit/5e8c9fbeec13450d7d712c6a0c520f652031a27f
+;future work:
+;formal specification would assure, e.g., that all redexes preserve
+;the [tree structure of expressions|grammati cality of nexps]
+
 ;external syntax of nouns is strictly atoms and cells 
 
 ;internal syntax includes nock prefix operators 
@@ -166,7 +172,11 @@
 ;then `ras` must have a notion of nexps.
 
 ;list of Nock operators
-(define nops '(wut lus tis fas hax tar))
+(define nops '(nock wut lus tis fas hax tar)) 
+;we interpret the keywork "nock" as transparently synonymous with
+;"tar". If other code builds nexps with nested `nock`s, then that is
+;at minimum a stylistic error on the caller's side.
+
 (define (nop n) (member n nops))
 
 (define (nexp e)
@@ -199,17 +209,86 @@
     [_ 'error-not-a-nexp]
     ))
 
+;function call nock
 (define (nock a) 
-  ;must decide whether to introduce a runtime assert of the type of a
-  ;- I think yes, ras'ing a is the realization of the spirit of 
-  ;[a b c]=>[a [b c]]
+  ;must decide whether to introduce a runtime assert of the type of
+  ;`a` - I think yes, ras'ing `a` is the realization of the spirit of
+  ;[a b c]=>[a [b c]] (see note ras-nir-trw).
   (tar (ras a)))
 
-(define (tar a)
+(define (fas a)
   (match a
-    [_ a]))
+    [ `[1 ,a]                       a ]
+    [ `[2 [,a ,b]]                  a ]
+    [ `[3 [,a ,b]]                  b ]
+;#[(a + a) b c]      #[a [b /[(a + a + 1) c]] c]
+;#[(a + a + 1) b c]  #[a [/[(a + a) c] b] c]
+;^variables clearly do not match any noun, but are informed by context to be atoms or cells
+    [ `[,a ,b] 
+      #:when 
+      (and (even? a) (> a 2))       (fas `[2 ,(fas `[,(/ a 2) ,b])]) ] 
+    ;absent either (> 2 a) or (cell b) guards, [2 atom] causes a
+    ;cycle
+    [ `[,a ,b]
+      #:when (and (odd? a) (> a 3)) (fas `[3 ,(fas `[,(/ (- a 1) 2) ,b])]) ] 
+    ;absent either (> 3 a) or (cell b) guards, [3 atom] causes a
+    ;cycle
+    [ _                'error-fas]))
+
+(define (tar a) ;no need for noun checks on a, given that standard
+                ;usage should follow from the nock entry
+                ;point. Defining `tar` at the top level is easier to
+                ;test, or use modularly; a stricter variant would nest
+                ;the definition within `nock`, or make it private via
+                ;module mechanisms.
+  (match a ;TODO `-->` or `==>` macro
+    [ `[,a [[,b ,c] ,d]] `[,(tar `[,a [,b ,c]]) ,(tar `[,a ,d])] ]
+    [ `[,a [0 ,b]]       (fas `[,b ,a]) ]
+    [_ 'error-tar]))
 
 ;term rewrite nock eval
+(define (neval n)
+  (match n
+    [`(nock ,a)
+     #:when (noun a) ;variables match any noun, so check for noun status
+     (neval `(tar ,a))]
+    [`(tar ,a)
+     #:when (noun a)
+     `(tar ,a) ;control looping by calling, or not, nevalo on RHS
+     ]
+      ))
+
+(define (neval-loop n)
+  (let ([p
+         (match n
+           [`(nock ,a)
+            #:when (noun a)
+            `(tar ,a)]
+           [`[,a ,b . ,c] 
+            (ras-nir n)] ;Note ras-nir-trw: in other impl, pull this
+                         ;outside the main match, to run on entry,
+                         ;rather than each reduction pass. The
+                         ;inclusion of the syntactic normalization
+                         ;rule within the redexes introduces a runtime
+                         ;component to the determination of the
+                         ;grammar of valid nock expressions. If
+                         ;agrammatical expressions are excluded from
+                         ;evaluation, either statically, or via a
+                         ;check outside the main pattern collection
+                         ;(e.g., upon first entry of `nock`), then
+                         ;this rule need not be included in the
+                         ;pattern collection.
+           [`(tar ,a)
+            #:when (noun a)
+            `(tar ,a)]
+           [_ 'error-not-evaluable]
+           )])
+    (if (equal? n p) ;break out loop or not to single check outside
+                     ;the main match, rather than per redex
+        p
+        (neval-loop p))))
+
+
 #|
 
 decided against `neval` because the goal is to write an interpreter
@@ -248,7 +327,7 @@ nexps. Thus, this layer of indirection/abstraction is unncessary.
     (if (eq? n p) 
         p
         (neval p))))
-#|
+|#
 
 (define-syntax test
   (syntax-rules ()
@@ -287,10 +366,18 @@ nexps. Thus, this layer of indirection/abstraction is unncessary.
     (test 'invalid-cell-long (cell '[5 5 5]) #f)
     (test 'invalid-cell-short (cell '[5]) #f)
 
+    (test 'fas-1 (fas '[1 0]) 0)
+    (test 'fas-2 (fas '[2 [1 2]]) 1)
+    (test 'fas-3 (fas '[3 [1 2]]) 2)
+    (test 'fas-4 (fas '[4 [[3 4] 2]]) 3)
+    (test 'fas-5 (fas '[5 [[3 4] 2]]) 4)
+    (test 'fas-4-atom (fas '[4 0]) 'error-fas)
+    (test 'fas-5-atom (fas '[5 0]) 'error-fas)
+
     ;term rewrite tests
-    (test 'trw-wut-cell (neval '(wut [0 0])) 0)
-    (test 'trw-wut-atom (neval '(wut 0)) 1)
-    (test 'trw-nock1 (neval '(nock [0 1 0])) 0) 
+;    (test 'trw-wut-cell (neval '(wut [0 0])) 0)
+ ;   (test 'trw-wut-atom (neval '(wut 0)) 1)
+  ;  (test 'trw-nock1 (neval '(nock [0 1 0])) 0) 
 
 #| Convert to tests of `nexp`
  nocksche.rkt> (nexp '(wut [0 [0 0]]))
