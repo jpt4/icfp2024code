@@ -9,9 +9,29 @@
 
 ;prior work:
 ;https://github.com/nvasilakis/Noq/commit/5e8c9fbeec13450d7d712c6a0c520f652031a27f
+;https://github.com/runtimeverification/knock/blob/master/k-src/nock.k - lifts the right associativity rule to the type/hand-crafted heuristics level
 ;future work:
 ;formal specification would assure, e.g., that all redexes preserve
 ;the [tree structure of expressions|grammati cality of nexps]
+
+;discussion elsewhere
+#|In my ongoing Nock interpreter project, I have found the specification of syntactic normalization as an explicit reduction rule to be one of the more interesting aspects of fidelitously translating the informal Nock spec to an executable implementation.
+
+That is, including [a b c] -> [a [b c]] as a symbolic reduction rule, rather than natural language commentary (as used to describe atoms, cells, and nouns), strongly implies that a valid Nock implementation not only can accept and coerce agramatical input, but that doing so is an operation on par with wut, fas, tis, tar, etc.
+
+One then either must build the interpreter such that normalization is a first class operation, or decide that the rule is meant to inform the spirit but not the letter of an executable Nock, and push such normalization outside the redexes, to the type level, or a validation pass on expressions prior to entry to the main redexes via nock(a).
+
+This points to the more general matter, which is the non-trivial amount of discretion required in producing a formal Nock grammar. In the strict sense, Nock is an evaluator of nouns, which are homoiconic, but the Nock pseudocode spec also provides an "internal representation" syntax, in which reductions are defined in terms of operation symbols (+, /, =, *, #, ?) that are neither cells nor atoms.
+
+Ought /[2 /[2 [[3 4] 2]]] be evaluable? If so, that means an interpreter must have a notion Nock internal representations (NIRs) as first class expressions. Ought /[2 /[2 [3 4] 2]]? If so, then the right association mechanism of the rule [a b c] -> [a [b c]] must be able to handle NIRs as well as nouns.
+
+The efforts at formal verification above generally either adopt a relaxed attitude towards pseudocode fidelity, lifting [a b c] -> [a [b c]] out of the main redex body into the type level, or incorporating the rule into validation of input expressions, or they hardcode heuristics to normalize select agrammatical expressions, allowing them to be handled first-class.
+
+A fully formal definition of Nock would need to address the question of its grammar; separately, it should prove that all reduction rules preserve the grammaticality of expressions.
+
+To take the nested fas example further, nothing in the spec forbids using the nock keyword as an operator, interchangeably with *. It would require the subsidization of decision on the part of an implementer to determine whether nock( nock(a)) is valid input.
+|#
+
 
 ;external syntax of nouns is strictly atoms and cells 
 
@@ -244,6 +264,7 @@
   (match a ;TODO `-->` or `==>` macro
     [ `[,a [[,b ,c] ,d]] `[,(tar `[,a [,b ,c]]) ,(tar `[,a ,d])] ]
     [ `[,a [0 ,b]]       (fas `[,b ,a]) ]
+    [ `[,a [1 ,b]]       b]
     [_ 'error-tar]))
 
 ;term rewrite nock eval
@@ -382,6 +403,8 @@ nexps. Thus, this layer of indirection/abstraction is unncessary.
     (test 'tar0_6 (tar '[[[3 4] [5 6]] [0 6]]) 5)
     (test 'tar0_7 (tar '[[[3 4] [5 6]] [0 7]]) 6)
     
+    (test 'tar1-atom (tar '[0 [1 2]]) 2)
+    (test 'tar1-cell (tar '[0 [1 [2 3]]]) '[2 3])
 
     ;term rewrite tests
 ;    (test 'trw-wut-cell (neval '(wut [0 0])) 0)
