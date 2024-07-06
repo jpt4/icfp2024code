@@ -262,9 +262,142 @@ To take the nested fas example further, nothing in the spec forbids using the no
                 ;the definition within `nock`, or make it private via
                 ;module mechanisms.
   (match a ;TODO `-->` or `==>` macro
-    [ `[,a [[,b ,c] ,d]] `[,(tar `[,a [,b ,c]]) ,(tar `[,a ,d])] ]
+    [ `[,a [[,b ,c] ,d]] `[,(tar `[,a [,b ,c]]) ,(tar `[,a ,d])] ] 
     [ `[,a [0 ,b]]       (fas `[,b ,a]) ]
-    [ `[,a [1 ,b]]       b]
+    [ `[,a [1 ,b]]       b] ;K combinator
+    [ `[,a [2 [,b ,c]]]  (tar `[,(tar `[,a ,b]) ,(tar `[,a ,c])]) ]
+    ;^ compare S-combinator, Sxyz = xz(yz)
+    #|
+
+**Encoding the SKI calculus as Nock expressions**
+
+I combinator:
+
+    Ix = x
+    xI = x
+    [x I] = x
+**  I := [0 1]
+    xI = nock([x [0 1]]) = /[1 x] = x
+
+K combinator:
+
+    Kxy = x
+    yxK = x
+    [[y x] K] = x
+**  K := [0 3]
+    yxK = [[y x] K] = nock([[y x] [0 3]]) = /[3 [y x]] = x
+
+S combinator:
+
+    Sxyz = xz(yz)  
+    zyxS = ((zy)(zx))
+    [z [y x]]S = *[*[z y] *[z x]]
+**  S := [[0 2] [[1 2] [0 3]]]
+    zyxS = [z [[y x] S]] = nock([z [[y x] [[0 2] [[1 2] [0 3]]]]]) =
+    [...TODO, but see Derivation below...]
+    *[z [2 [y x]]]
+    *[*[z y] *[z x]]
+
+    Derivation:
+    S := [[b c] d]
+
+    [[z [y x]] [[b c] d]]
+    [*[[z [y x]] [b c]] *[[z [y x]] d]]
+    [*[[z [y x]] [0 2]] *[[z [y x]] d]]
+    [z *[[z [y x]] d]]
+    [z *[[z [y x]] [[e f] g]]]
+    [z [*[[z [y x]] [1 2]] *[[z [y x]] g]]]
+    [z [2 *[[z [y x]] g]]]
+    [z [2 *[[z [y x]] [0 3]]]]
+    [z [2 [y x]]]
+    [z 2 y x]
+
+
+
+    Kxy = x
+    *[y 1 x] = x <- suggestively similar, but currently doubtful
+    
+**Scratch work**
+    yxK = x
+    *[y K x] = x
+    Sxyz = ((xz) (yz))
+    *[z 2 x y] = *[*[z x] *[z y]]
+    zyxS = ((z y) (z x)) ;reverse polish combinators
+    *[z S y x] = *[*[z y] *[z x]]
+    Ix = (SK_)x = SK_x = Kx(_x) = x (lazy eval)
+    xI = ((x_)K)S = *[x S _ K] = *[*[x _] *[x K]] = *[*[x 0 1] *[x 1 ]]
+**Scratch work**
+
+    Ix = x
+    xI = x
+    [x I] = x
+**  I := [0 1]
+    xI = [x [0 1]] = /[1 x] = x
+
+    Kxy = x
+    yxK = x
+    [[y x] K] = x <- TODO: rederive as [y [x K]]?
+    K := [2 b c]
+         *[*[[y x] b] *[[y x] c]]
+         *[*[[y x] b] *[[y x] [e f] d]]
+         *[*[[y x] b] [*[[y x] e f] *[[y x] d]]]
+         *[*[[y x] b] [*[[y x] 1 1] *[[y x] d]]] <- recurring problem of needing to pull y or x from the subject on its own. fas seems necessary; can nock1 be reduced to nock0?
+                             
+    [y 1 x] = x
+
+    Kxy = x
+    yxK = x
+    [[y x] K] = x
+**  K := [0 3]
+    yxK = [[y x] K] = [[y x] [0 3]] = /[3 [y x]] = x
+
+    [y [x K]] = x <- does not work, nothing to match on in redexes
+    K := [] 
+
+    Sxyz = xz(yz)  
+    zyxS = ((zy)(zx))
+    [z [y x]]S = *[*[z y] *[z x]]
+    S := [[b c] d]
+
+    [[z [y x]] [[b c] d]]
+    [*[[z [y x]] [b c]] *[[z [y x]] d]]
+    [*[[z [y x]] [0 2]] *[[z [y x]] d]]
+    [z *[[z [y x]] d]]
+    [z *[[z [y x]] [[e f] g]]]
+    [z [*[[z [y x]] [1 2]] *[[z [y x]] g]]]
+    [z [2 *[[z [y x]] g]]]
+    [z [2 *[[z [y x]] [0 3]]]]
+    [z [2 [y x]]]
+    [z 2 y x]
+
+ **   S := [[0 2] [[1 2] [0 3]]]
+
+ **The following does not work, due to a potential mismatch between definitions of combinator-qua-combinator and combinator as lambda term**
+    Ix = SKKx = x
+    xI = xKKS = [x [0 3] [0 3] [[0 2] [[1 2] [0 3]]]]
+
+    *[x [[0 3] [[0 3] [[0 2] [[1 2] [0 3]]]]]]
+    [*[x [0 3]] *[x [[0 3] [[0 2] [[1 2] [0 3]]]]]] <- problem, incomplete arguments to K, aka [0 3], i.e. x not a cell
+    [*[x [0 3]] *[x [[0 3] [[0 2] [[1 2] [0 3]]]]]]
+
+    Ix = SKKx = x
+    xI = ((xK)K)S = [[[x [0 3]] [0 3]] [[0 2] [[1 2] [0 3]]]]
+    
+    *[[[x [0 3]] [0 3]] [[0 2] [[1 2] [0 3]]]]
+    [*[[[x [0 3]] [0 3]] [0 2]] *[[[x [0 3]] [0 3]] [[1 2] [0 3]]]]
+    [/[2 [[x [0 3]] [0 3]]] *[[[x [0 3]] [0 3]] [[1 2] [0 3]]]]
+    [[x [0 3]] *[[[x [0 3]] [0 3]] [[1 2] [0 3]]]]
+    [[x [0 3]] [*[[[x [0 3]] [0 3]] [1 2]] *[[[x [0 3]] [0 3]] [0 3]]]]
+    [[x [0 3]] [*[[[x [0 3]] [0 3]] [1 2]] *[[[x [0 3]] [0 3]] [0 3]]]]
+
+
+
+    Ix = SKSx = ((Kx) (Sx))
+    xI = xSKS = x 2 S K = *[*[x S] *[x K]] = *[*[x 2] *[x 1]] 
+
+    
+    
+    |#
     [_ 'error-tar]))
 
 ;term rewrite nock eval
