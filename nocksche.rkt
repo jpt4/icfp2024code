@@ -312,12 +312,12 @@ S combinator:
     [z [2 [y x]]]
     [z 2 y x]
 
-
+  
+**Scratch work**
 
     Kxy = x
     *[y 1 x] = x <- suggestively similar, but currently doubtful
-    
-**Scratch work**
+
     yxK = x
     *[y K x] = x
     Sxyz = ((xz) (yz))
@@ -326,7 +326,6 @@ S combinator:
     *[z S y x] = *[*[z y] *[z x]]
     Ix = (SK_)x = SK_x = Kx(_x) = x (lazy eval)
     xI = ((x_)K)S = *[x S _ K] = *[*[x _] *[x K]] = *[*[x 0 1] *[x 1 ]]
-**Scratch work**
 
     Ix = x
     xI = x
@@ -381,7 +380,7 @@ S combinator:
     [*[x [0 3]] *[x [[0 3] [[0 2] [[1 2] [0 3]]]]]]
 
     Ix = SKKx = x
-    xI = ((xK)K)S = [[[x [0 3]] [0 3]] [[0 2] [[1 2] [0 3]]]]
+    xI = ((xK)K)S = [[[x [0 3]] [0 3]] [[0 2] [[1 2] [0 3]]]] <- cannot do this, because would have to deeply nest x inside subject of S, as opposed to simple prepending.
     
     *[[[x [0 3]] [0 3]] [[0 2] [[1 2] [0 3]]]]
     [*[[[x [0 3]] [0 3]] [0 2]] *[[[x [0 3]] [0 3]] [[1 2] [0 3]]]]
@@ -395,7 +394,8 @@ S combinator:
     Ix = SKSx = ((Kx) (Sx))
     xI = xSKS = x 2 S K = *[*[x S] *[x K]] = *[*[x 2] *[x 1]] 
 
-    
+    xI = x_KS
+**Scratch work**    
     
     |#
     [_ 'error-tar]))
