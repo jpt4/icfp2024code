@@ -267,7 +267,76 @@ To take the nested fas example further, nothing in the spec forbids using the no
     [ `[,a [1 ,b]]       b] ;K combinator
     [ `[,a [2 [,b ,c]]]  (tar `[,(tar `[,a ,b]) ,(tar `[,a ,c])]) ]
     ;^ compare S-combinator, Sxyz = xz(yz)
+    [_ 'error-tar]))
     #|
+
+Z combinator
+
+Zgv = g(Zg)v
+
+(?) g 8 Z v = *[[*[g Z] g] v]
+
+g 8 f v = *[[*[g f] g] v]
+
+a1 8 K v = *[[*[a1 K] K] v] 
+           *[[Ka1 K] v]         
+
+Partial evaluation:
+  *[b *[a N]] = *[[b a] N]
+
+*[a1 K] = [a1 K] = K'
+*[a2 K'] = a1
+*[[a2 a1] K] = a1
+
+*[ a1 [[b c] d] ]
+[*[a1 b c] *[a1 d]]
+
+*[a1 K] = K'
+
+K := [8 [[1 K2] [0 1]]]
+
+*[a1 8 [1 K2] [0 1]]
+*[[*[a b] a] c]
+*[[*[a1 [1 K2]] a1] [0 1]]
+*[[K2 a1] [0 1]]
+/[1 [K2 a1]]
+[K2 a1] = K'
+
+
+*[a2 K'] = a1
+
+*[a2 [K2 a1]]
+K2 := 1
+*[a2 [1 a1]]
+a1
+
+K := [8 [[1 1] [0 1]]]
+
+*[y *[x K]] = x 
+
+^Here we use `tar` as backtick is used in iota/jot, to force
+application of an argument with a combinator.  This expression is a
+nexp, not a noun; there is furthermore no LHS pattern that matches the
+whole expression. nock([y *[x K]]) would fail to evaluate under a
+rigid implementation that only accepted nouns upon entry. Does `tar`
+create a lexical scope for interpretation, or must the global
+expression be valid prior to any reduction being performed?
+
+Kp[artial] := [8 [[1 1] [0 1]]]
+
+***K := if cell?(arg) [0 3] else Kp
+
+[x K] = *[x 6 cell? [0 3] Kp]
+
+***K := [6 [[3 [0 1]] [[0 3] [[8 [[1 1] [0 1]]]]]]] TODO: Derive Nock6 and Nock8 from primitives (-1 to 5), plus operators.
+
+More speculative: are there universal combinators that do not require
+partial application (or this partial application trick)?
+
+**  S := [[0 2] [[1 2] [0 3]]]
+
+SKKx
+*[[x K K] S]
 
 **Encoding the SKI calculus as Nock expressions**
 
@@ -287,14 +356,50 @@ K combinator:
 **  K := [0 3]
     yxK = [[y x] K] = nock([[y x] [0 3]]) = /[3 [y x]] = x
 
+    Kx = Kx
+    (Kx)y = x
+
+    xK = xK
+    y(xK) = x
+    xK = Kx
+    [y [K x]] = x
+
+    [x K] 
+    [x [[b c] d]]
+    [*[x [b c]] *[x d]]
+    [*[x [b c]] *[x [0 1]]]
+    [*[x [b c]] x]
+    [*[x [2 [e f]]] x]
+    [*[*[x [1 2]] *[x f]] x]
+    [*[2 *[x [1 [[0 1] [1 ]]]]] x] <- need recursive combinator to duplicate f
+    
+    [[[2 [[1 2] f]] [0 1]] x]
+
+    K is: 
+    1) the combinator which when applied to any value x produces
+    the function (Kx), that returns x when applied to any argument
+    y, (Kx)y = x, aka partially evaluated.
+
+    2) the combinator which detects the arity of its arguments, and
+    either produces Kx or x in response.
+
+    Need either the Z combinator or a "detect atom v cell" component
+    to simulate partial application.
+
+    Detect atom v cell:
+
 S combinator:
 
     Sxyz = xz(yz)  
     zyxS = ((zy)(zx))
     [z [y x]]S = *[*[z y] *[z x]]
 **  S := [[0 2] [[1 2] [0 3]]]
-    zyxS = [z [[y x] S]] = nock([z [[y x] [[0 2] [[1 2] [0 3]]]]]) =
-    [...TODO, but see Derivation below...]
+    zyxS = [[z [y x]] S] = nock([z [[y x] [[0 2] [[1 2] [0 3]]]]]) =
+    nock([z [[y x] [[0 2] [[1 2] [0 3]]]]])
+    *[z [[y x] [[0 2] [[1 2] [0 3]]]]]
+    [*[z [y x]] *[z [[0 2] [[1 2] [0 3]]]]]
+
+
     *[z [2 [y x]]]
     *[*[z y] *[z x]]
 
@@ -398,7 +503,6 @@ S combinator:
 **Scratch work**    
     
     |#
-    [_ 'error-tar]))
 
 ;term rewrite nock eval
 (define (neval n)
