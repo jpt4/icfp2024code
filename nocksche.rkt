@@ -333,6 +333,36 @@ Kp[artial] := [8 [[1 1] [0 1]]]
 More speculative: are there universal combinators that do not require
 partial application (or this partial application trick)?
 
+Sx = (Sx) = S'
+S'y = (Sx)y = S''
+S''z = ((Sx)y)z = ((xz)(yz))
+
+Curried application only:
+
+*[x S] = [S2 x] = S'
+
+*** S := [[1 S2] [0 1]]
+
+*[x S]
+*[x [[b c] d]] 
+[*[x [b c]] *[x d]]
+[*[x [1 S2]] *[x d]]
+[S2 *[x d]]
+[S2 *[x [0 1]]]
+[S2a [S2b x]]
+S'
+
+*[y S'] = [S3 [y x]] = S''
+
+*[y [S2 x]]
+*[y [
+
+[S3 [y x]]
+S''
+
+
+
+
 **  S := [[0 2] [[1 2] [0 3]]]
 
 SKKx
