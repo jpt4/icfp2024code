@@ -403,6 +403,13 @@ S3 := 2
 **Obligatorily partially evaluable S combinator**
 ****  S := [[1 [1 2]] [[1 [0 1]] [[1 1] [0 1]]]]
 
+Using the partially evaluable forms of S and K, and a Nock syntax
+which allows for passing arbitrary `tar` annotated NIR nexps to the
+Nock interpreter, Unlambda [0] can be implemented, substituting `*` for
+```.
+
+[0] https://esolangs.org/wiki/Unlambda
+
 **  S := [[0 2] [[1 2] [0 3]]]
 
 SKKx
