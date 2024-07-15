@@ -1,5 +1,15 @@
-;Naive strict application
+#|
+Syntactic transform from left associative combinators to right
+associative Nock expressions:
 
+C
+
+|#
+
+;Naive strict application
+;Is[trict] := [0 1] - correct for all variants
+(define Is '[0 1])
+;
 ;Obligatory curried application
 ;S := [[1 [1 2]] [[1 [0 1]] [[1 1] [0 1]]]]
 (define Sc '[[1 [1 2]] [[1 [0 1]] [[1 1] [0 1]]]])

@@ -237,6 +237,13 @@ To take the nested fas example further, nothing in the spec forbids using the no
   ;[a b c]=>[a [b c]] (see note ras-nir-trw).
   (tar (ras a)))
 
+(define (wut a)
+  (match a
+    [ `[,a ,b] 0 ] ;note the shallow check for composite versus
+                   ;simple, not recursing.
+    [ (? atom) 1 ] 
+    ))
+
 (define (fas a)
   (match a
     [ `[1 ,a]                       a ]
@@ -268,6 +275,7 @@ To take the nested fas example further, nothing in the spec forbids using the no
     [ `[,a [1 ,b]]       b] ;K combinator (of a sorts - no partial application)
     [ `[,a [2 [,b ,c]]]  (tar `[,(tar `[,a ,b]) ,(tar `[,a ,c])]) ]
     ;^ compare S-combinator, Sxyz = xz(yz) - See combinators.txt
+    [ `[,a [3 ,b]        (wut (tar `[,a ,b])) ]
     [_ 'error-tar]))
 
 ;term rewrite nock eval
