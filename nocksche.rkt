@@ -6,6 +6,7 @@
 
 #lang racket
 (require racket/match)
+(require string-interpolation)
 
 ;prior work:
 ;https://github.com/nvasilakis/Noq/commit/5e8c9fbeec13450d7d712c6a0c520f652031a27f
@@ -241,9 +242,18 @@ To take the nested fas example further, nothing in the spec forbids using the no
   (match a
     [ `[,a ,b] 0 ] ;note the shallow check for composite versus
                    ;simple, not recursing.
-    [ (? atom) 1 ] 
+    [ (? atom) 1 ]))
+
+(define (lus a)
+  (match a
+    [ `[,a ,b] (string->symbol "+@{`[,a ,b]}") ]
+    [ (? atom) (+ 1 a) ]
     ))
 
+(define (tis a)
+  ""
+  )
+  
 (define (fas a)
   (match a
     [ `[1 ,a]                       a ]
@@ -261,7 +271,11 @@ To take the nested fas example further, nothing in the spec forbids using the no
       #:when (and (odd? a) (> a 3)) (fas `[3 ,(fas `[,(/ (- a 1) 2) ,b])]) ] 
     ;absent either (> 3 a) or (cell b) guards, [3 atom] causes a
     ;cycle
-    [ _                             'error-fas]))
+    [ (? nexp)                      (string->symbol "/@{a}")]))
+
+(define (hax a)
+  ""
+  )
 
 (define (tar a) ;no need for noun checks on a, given that standard
                 ;usage should follow from the nock entry
@@ -270,13 +284,22 @@ To take the nested fas example further, nothing in the spec forbids using the no
                 ;the definition within `nock`, or make it private via
                 ;module mechanisms.
   (match a ;TODO `-->` or `==>` macro
-    [ `[,a [[,b ,c] ,d]] `[,(tar `[,a [,b ,c]]) ,(tar `[,a ,d])] ] 
-    [ `[,a [0 ,b]]       (fas `[,b ,a]) ]
-    [ `[,a [1 ,b]]       b] ;K combinator (of a sorts - no partial application)
-    [ `[,a [2 [,b ,c]]]  (tar `[,(tar `[,a ,b]) ,(tar `[,a ,c])]) ]
+    [ `[,a [[,b ,c] ,d]]      `[,(tar `[,a [,b ,c]]) ,(tar `[,a ,d])] ] 
+    [ `[,a [0 ,b]]            (fas `[,b ,a]) ]
+    [ `[,a [1 ,b]]            b ] ;K combinator (of a sorts - no partial application)
+    [ `[,a [2 [,b ,c]]]       (tar `[,(tar `[,a ,b]) ,(tar `[,a ,c])]) ]
     ;^ compare S-combinator, Sxyz = xz(yz) - See combinators.txt
-    [ `[,a [3 ,b]        (wut (tar `[,a ,b])) ]
-    [_ 'error-tar]))
+    [ `[,a [3 ,b]]            (wut (tar `[,a ,b])) ]
+    [ `[,a [4 ,b]]            (lus (tar `[,a ,b])) ]
+    [ `[,a [5 [,b ,c]]]       (tis `[,(tar `[,a ,b]) ,(tar `[,a ,c])]) ]
+    [ `[,a [6 [,b [,c ,d]]]]  (tar `[,a ,(tar `[[,c ,d] [0 ,(tar `[[2 3] [0 ,(tar `[,a [4 [4 ,b]]])]])]])]) ]
+    [ `[,a [7 [,b ,c]]]       (tar `[,(tar `[,a ,b]) ,c]) ]
+    [ `[,a [8 [,b ,c]]]       (tar `[[,(tar `[,a ,b]) ,a] ,c]) ]
+    [ `[,a [9 [,b ,c]]]       (tar `[,(tar `[,a ,c]) [2 [[0 1] [0 ,b]]]]) ]
+    [ `[,a [10 [[,b ,c] ,d]]] (hax `[,b [,(tar `[,a ,c]) ,(tar `[,a ,d])]]) ]
+    [ `[,a [11 [[,b ,c] ,d]]] (tar `[[,(tar `[,a ,c]) ,(tar `[,a ,d])] [0 3]]) ]
+    [ `[,a [11 [,b ,c]]]      (tar `[,a ,c]) ]
+    [(? nexp)            (string->symbol "*@{a}")]))
 
 ;term rewrite nock eval
 (define (neval n)
