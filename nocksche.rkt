@@ -251,8 +251,10 @@ To take the nested fas example further, nothing in the spec forbids using the no
     ))
 
 (define (tis a)
-  ""
-  )
+  (match a
+    [ `[,a ,a] #:when (atom a)                                   0 ] ;note shallow equality comparison
+    [ `[,a ,b] #:when (and (atom a) (atom b) (not (equal? a b))) 1 ]
+    ))
   
 (define (fas a)
   (match a
@@ -274,7 +276,14 @@ To take the nested fas example further, nothing in the spec forbids using the no
     [ (? nexp)                      (string->symbol "/@{a}")]))
 
 (define (hax a)
-  ""
+  (match a
+    [ `[1 [,a ,b]]                   a ]
+    [ `[,a [,b ,c]] 
+      #:when (and (even? a) (> 1 a)) (hax `[,a [[,b ,(fas `[,(+ a 1) ,c])] ,c]]) ]
+    [ `[,a [,b ,c]] 
+      #:when (and (odd? a) (> 1 a))  (hax `[,a [[,(fas `[,(- a 1) ,c]) ,b] ,c]]) ]
+    [ (? nexp)                       (string->symbol "#@{a}")]
+    )
   )
 
 (define (tar a) ;no need for noun checks on a, given that standard
