@@ -228,8 +228,7 @@ To take the nested fas example further, nothing in the spec forbids using the no
      #:when (null? z)
      `[,(ras-nir (car a)) ,(ras-nir (cadr a))]
      ]
-    [_ 'error-not-a-nexp]
-    ))
+    [_ 'error-not-a-nexp]))
 
 ;function call nock
 (define (nock a) 
@@ -247,14 +246,12 @@ To take the nested fas example further, nothing in the spec forbids using the no
 (define (lus a)
   (match a
     [ `[,a ,b] (string->symbol "+@{`[,a ,b]}") ]
-    [ (? atom) (+ 1 a) ]
-    ))
+    [ (? atom) (+ 1 a) ]))
 
 (define (tis a)
   (match a
     [ `[,a ,a] #:when (atom a)                                   0 ] ;note shallow equality comparison
-    [ `[,a ,b] #:when (and (atom a) (atom b) (not (equal? a b))) 1 ]
-    ))
+    [ `[,a ,b] #:when (and (atom a) (atom b) (not (equal? a b))) 1 ]))
   
 (define (fas a)
   (match a
@@ -282,9 +279,7 @@ To take the nested fas example further, nothing in the spec forbids using the no
       #:when (and (even? a) (> 1 a)) (hax `[,a [[,b ,(fas `[,(+ a 1) ,c])] ,c]]) ]
     [ `[,a [,b ,c]] 
       #:when (and (odd? a) (> 1 a))  (hax `[,a [[,(fas `[,(- a 1) ,c]) ,b] ,c]]) ]
-    [ (? nexp)                       (string->symbol "#@{a}")]
-    )
-  )
+    [ (? nexp)                       (string->symbol "#@{a}") ]))
 
 (define (tar a) ;no need for noun checks on a, given that standard
                 ;usage should follow from the nock entry
@@ -308,19 +303,34 @@ To take the nested fas example further, nothing in the spec forbids using the no
     [ `[,a [10 [[,b ,c] ,d]]] (hax `[,b [,(tar `[,a ,c]) ,(tar `[,a ,d])]]) ]
     [ `[,a [11 [[,b ,c] ,d]]] (tar `[[,(tar `[,a ,c]) ,(tar `[,a ,d])] [0 3]]) ]
     [ `[,a [11 [,b ,c]]]      (tar `[,a ,c]) ]
-    [(? nexp)            (string->symbol "*@{a}")]))
+    [(? nexp)                 (string->symbol "*@{a}")]))
 
 ;term rewrite nock eval
+;unified permissive neval, working over nexps, (loops?) - most primitive implementation
+;two stage exclusive neval, nouns only, (catches loops?) - slightly more opinionated
+;then back to functional nock, showing implementation as DSL rather than evaluator of quoted expressions - nexp and noun versions, functions separate and enclosed.
+
 (define (neval n)
   (match n
-    [`(nock ,a)
-     #:when (noun a) ;variables match any noun, so check for noun status
-     (neval `(tar ,a))]
+    [ `(nock ,a) #:when (noun a) (neval `(tar ,a)) ]
+    [ a #:when (not (nexp a))    (neval `,(ras-nir a)) ] ;the spec would halt execution here, but clearly that is not the intended behavior.
+    [ `(wut [,a ,b]) 0 ]
+    [ `(wut ,a) 1 ]
+    ))
+
+;#:when (noun a) ;variables match any noun, so check for noun status
+
+(define (naux n)
+  (match n
     [`(tar ,a)
      #:when (noun a)
-     `(tar ,a) ;control looping by calling, or not, nevalo on RHS
+     `(tar ,a) ;control looping by calling, or not, neval on RHS
      ]
-      ))
+
+    ))
+
+   
+   
 
 (define (neval-loop n)
   (let ([p
