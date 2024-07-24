@@ -314,8 +314,11 @@ To take the nested fas example further, nothing in the spec forbids using the no
   (match n
     [ `(nock ,a) #:when (noun a) (neval `(tar ,a)) ]
     [ a #:when (not (nexp a))    (neval `,(ras-nir a)) ] ;the spec would halt execution here, but clearly that is not the intended behavior.
-    [ `(wut [,a ,b]) 0 ]
-    [ `(wut ,a) 1 ]
+    [ `(wut [,a ,b])             0 ]
+    [ `(wut ,a)                  1 ]
+    [ `(lus [,a ,b])             (neval `(lus [,a ,b]))  ] ;with neval, loops, without neval, halts with unevaluated input. This presents the question of terminal versus non-terminal reduction rules. The spec implies but does not mandate when to continue attempting pattern matching.
+    [ `(lus ,a)                  (+ 1 a) ]
+    []
     ))
 
 ;#:when (noun a) ;variables match any noun, so check for noun status
