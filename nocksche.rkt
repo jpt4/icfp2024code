@@ -318,7 +318,9 @@ To take the nested fas example further, nothing in the spec forbids using the no
     [ `(wut ,a)                  1 ]
     [ `(lus [,a ,b])             (neval `(lus [,a ,b]))  ] ;with neval, loops, without neval, halts with unevaluated input. This presents the question of terminal versus non-terminal reduction rules. The spec implies but does not mandate when to continue attempting pattern matching.
     [ `(lus ,a)                  (+ 1 a) ]
-    []
+    [ `(tis [,a ,a])            0 ] ;deep or shallow equality? "vars match any noun", but it is used in nop 6 only for atomic dis/equality. Native Racket `match` provides deep eq.
+    [ `(tis [,a ,b])            1 ]
+    
     ))
 
 ;#:when (noun a) ;variables match any noun, so check for noun status
