@@ -11,35 +11,33 @@
 ;"A noun is an atom or a cell.  An atom is a natural number.  A cell
 ;is an ordered pair of nouns." - these translate directly into mK:
 
-
-
-(define (noun i)
+(define (nouno i)
   (conde
-   [(atom i)]
-   [(cell i)]))
+   [(atomo i)]
+   [(cello i)]))
 
-(define (atom i)
+(define (atomo i)
   (fresh (d)
 	 (== `(nat . ,d) i)
-	 (nat d)))
+	 (nato d)))
 
-(define (nat i)
+(define (nato i)
   (fresh (d)
 	 (conde
 	  [(== '(0) i)]
 	  [(== '(1) i)]
 	  [(== `(0 . ,d) i)
 	   (=/= '(0) d)
-	   (nat d)]
+	   (nato d)]
 	  [(== `(1 . ,d) i)
 	   (=/= '(0) d)
-	   (nat d)])))
+	   (nato d)])))
    
-(define (cell i)
+(define (cello i)
   (fresh (a d)
 	 (== `(,a ,d) i)
-	 (noun a)
-	 (noun d)))
+	 (nouno a)
+	 (nouno d)))
 
 ;Reduce by the first matching pattern; variables match any noun.
 
@@ -66,9 +64,32 @@
 ;We begin with a monolithic `nocko` relation, using pattern matching
 ;on quoted expressions to perform the redexes.
 
-(define (nock i o) 
-  (nevalo `(tar ,i) o))
+(define (nocko i o) (taro i o))
 
+(define (wuto i o)
+  (fresh (a b)
+	 (conde
+	  [ (== `[,a ,b] i) (== 0 o) ]
+	  [ (atomo i)       (== 1 o) ])))
+
+(define (luso i o)
+  (fresh (a b)
+	 (conde
+	  [ (== `[,a ,b] i) (== `[lus ,i] o) ]
+	  [ (atomo i)       (add1o i o) ]
+	  )))
+
+(define (tiso i o)
+  ""
+  )
+
+(define (fas i o)
+  ""
+  )
+
+(define (taro i o) "")
+
+#|
 (define (nevalo i o)
   (fresh (a b neg)
 	 (noun a) (noun b)
@@ -77,14 +98,20 @@
 	   (== `(fas (,b ,a)) o)]
 	  #;[(nexp i neg)
 	   (=/= 't neg)]
-	  )))
+	  ))
+|#
 
+#|
 (define (nexp i o)
   (fresh (a b)
 ;	 (noun a) (noun b)
 	 (conde
 	  [(== `(tar (,a ((nat 0) ,b))) i)
 	   (== 't o)])))   
+|#
+
+#|
+
 a: noun ->
 a: atom -> |_
 a: cell -> 
@@ -147,6 +174,17 @@ d: 11 ->
 d: 11 ->
   e: atom -> |_
   e: cell -> [b [11 [f g]]] -> T
+
+|#
+
+(define (add1o i o)
+  (fresh (num res)
+	 (conde
+	  [ (== '(nat 0) i) (== '(nat 1) o) ]
+	  [ (== `(nat . ,num) i) (=/= '() num)
+	    (== `(nat . ,res) o) 
+	    (pluso num '(1) res) ] ;pluso call must be last, else run* diverges
+	  )))
 
 ;the nock operator `*`, meaning "evaluate", is pronouned "tar" (sTAR),
 ;which is used as the tag for `*` terms.
