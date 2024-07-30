@@ -70,18 +70,22 @@
   (fresh (a b)
 	 (conde
 	  [ (== `[,a ,b] i) (== 0 o) ]
-	  [ (atomo i)       (== 1 o) ])))
+	  [ (atomo i)       (== 1 o) ]
+	  )))
 
 (define (luso i o)
   (fresh (a b)
 	 (conde
 	  [ (== `[,a ,b] i) (== `[lus ,i] o) ]
-	  [ (atomo i)       (add1o i o) ]
+	  [ (atomo i)       (add1o i o) ] ;requires defining add1o for atoms
 	  )))
 
 (define (tiso i o)
-  ""
-  )
+  (fresh (a b)
+	 (conde
+	  [ (== `[,a ,a] i)           (== 0 o) ]
+	  [ (== `[,a ,b] i) (=/= a b) (== 1 o) ]
+	  )))
 
 (define (fas i o)
   ""
