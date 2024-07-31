@@ -191,16 +191,16 @@ d: 11 ->
 
 (define (npluso m n o) 
   (fresh (a b c)
-	 (== `(nat . ,a) m) (=/= '() a) ;(nato a/b/c) causes divergence
-	 (== `(nat . ,b) n) (=/= '() b)
-	 (== `(nat . ,c) o) (=/= '() c)
+	 (== `(nat . ,a) m) 
+	 (== `(nat . ,b) n) 
+	 (== `(nat . ,c) o) 
 	 (conde
 	  [(== '(0) a) (== '(0) b) (== '(0) c)]
-	  [(== '(0) a) (=/= '(0) b) (pluso '() b c)]
-	  [(=/= '(0) a) (== '(0) b) (pluso a '() c)]
-	  [(=/= '(0) a) (=/= '(0) b) (pluso a b c)]
-	  ))
-  )
+	  [(== '(0) a) (=/= '(0) b) (pluso '() b c) (nato b)]
+	  [(=/= '(0) a) (== '(0) b) (pluso a '() c) (nato a)]
+	  [(=/= '(0) a) (=/= '(0) b) (pluso a b c) (nato a) (nato b)] 
+          ;^nato constraints must follow pluso, else divergence.
+	  )))
 
 (define (nadd1o i o) (npluso i '(nat 1) o))
 
