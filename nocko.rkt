@@ -87,8 +87,16 @@
 	  [ (== `[,a ,b] i) (=/= a b) (== 1 o) ]
 	  )))
 
-(define (fas i o)
-  ""
+(define (faso i o)
+  (fresh (a b ind num resa)
+	 (conde
+	  [ (== `[(nat 1) ,a] i)                (== a o) ]
+	  [ (== `[(nat 0 1) [,a ,b]] i)         (== a o) ]
+	  [ (== `[(nat 1 1) [,a ,b]] i)         (== b o) ]
+	  [ (== `[,ind ,b] i) 
+	    (== `(nat . ,num) ind) (=/= '(0 1) num)
+	    (pluso a a num) (== `(nat . ,a) resa) (faso `[,resa ,b]) ]
+	  ))
   )
 
 (define (taro i o) "")
@@ -181,6 +189,22 @@ d: 11 ->
 
 |#
 
+(define (npluso m n o) 
+  (fresh (a b c)
+	 (== `(nat . ,a) m) (=/= '() a) ;(nato a/b/c) causes divergence
+	 (== `(nat . ,b) n) (=/= '() b)
+	 (== `(nat . ,c) o) (=/= '() c)
+	 (conde
+	  [(== '(0) a) (== '(0) b) (== '(0) c)]
+	  [(== '(0) a) (=/= '(0) b) (pluso '() b c)]
+	  [(=/= '(0) a) (== '(0) b) (pluso a '() c)]
+	  [(=/= '(0) a) (=/= '(0) b) (pluso a b c)]
+	  ))
+  )
+
+(define (nadd1o i o) (npluso i '(nat 1) o))
+
+#|
 (define (add1o i o)
   (fresh (num res)
 	 (conde
@@ -189,10 +213,10 @@ d: 11 ->
 	    (== `(nat . ,res) o) 
 	    (pluso num '(1) res) ] ;pluso call must be last, else run* diverges
 	  )))
+|#
 
 ;the nock operator `*`, meaning "evaluate", is pronouned "tar" (sTAR),
 ;which is used as the tag for `*` terms.
-
 
 ;[a b c] [a [b c]] 
 
