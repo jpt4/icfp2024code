@@ -77,7 +77,7 @@
   (fresh (a b)
 	 (conde
 	  [ (== `[,a ,b] i) (== `[lus ,i] o) ]
-	  [ (atomo i)       (add1o i o) ] ;requires defining add1o for atoms
+	  [ (atomo i)       (nadd1o i o) ] ;requires defining nadd1o for atoms
 	  )))
 
 (define (tiso i o)
@@ -88,18 +88,89 @@
 	  )))
 
 (define (faso i o)
-  (fresh (a b ind num resa)
+  (fresh (a b ind num res n)
 	 (conde
-	  [ (== `[(nat 1) ,a] i)                (== a o) ]
-	  [ (== `[(nat 0 1) [,a ,b]] i)         (== a o) ]
-	  [ (== `[(nat 1 1) [,a ,b]] i)         (== b o) ]
-	  [ (== `[,ind ,b] i) 
-	    (== `(nat . ,num) ind) (=/= '(0 1) num)
-	    (pluso a a num) (== `(nat . ,a) resa) (faso `[,resa ,b]) ]
-	  ))
-  )
+	  [ (== `[(nat 1) ,a] i)        (== a o) ]
+	  [ (== `[(nat 0 1) [,a ,b]] i) 
+	    (nouno a) (nouno b)         (== a o) ] ;nouno check prevents [,a ,b] === [nat num]
+	  [ (== `[(nat 1 1) [,a ,b]] i) 
+	    (nouno a) (nouno b)         (== b o) ]
+	  [ (== `[,ind ,b] i)
+	    (=/= '(nat 0) ind)
+	    (=/= '(nat 0 1) ind)
+	    (npluso a a ind)            (faso `[,a ,b] res) (faso `[(nat 0 1) ,res] o) ]
+	  [ (== `[,ind ,b] i)
+	    (=/= '(nat 1) ind)
+	    (=/= '(nat 1 1) ind)
+	    (npluso n '(nat 1) ind) 
+	    (npluso a a n)              (faso `[,a ,b] res) (faso `[(nat 1 1) ,res] o) ]
+;	  [ (== a i) ]  
+	       ;^this is the first instance of a spec mandated
+	       ;irreducible rule. wut, lus, and tis, despite only
+	       ;operating on a subset of all nouns, do not specify an
+	       ;error case; any error handling may be presumed to be
+	       ;at the implementer's discretion. However, irreducible
+	       ;expressions involving fas, hax, and tar must engage
+	       ;with the spec, which calls for them to loop. With
+	       ;nocko, employing miniKanren semantics, this looping
+	       ;may be mapped to divergence, the lack of a resolution
+	       ;to the relational Nock expression; the <x>-loop
+	       ;relations implement this (TODO: Implement looping
+	       ;relations). The mainline relations instead produce a
+	       ;more opinionated reponse, by converging to the empty
+	       ;resolution list.
+	  )))
+
+#|
+Partitioning the domain of fas: all RHS rules must be shapes that converge to T, by either producing a unification, or positively failing to unify, thus producing the empty list. All LHS shapes that yield |_ are then redundant, but may be specified positively, and produce positive failure.
+/a
+a: atom -> |_
+a: cell -> /[b c]
+ b: atom ->
+  b: 0 -> |_
+  b: 1 -> T
+  b: >1 ->
+   c: atom -> |_
+   c: cell -> T
+ b: cell -> |_
+|#
+
+(define (haxo i o) 
+  (fresh (a b ind c n res)
+         (conde
+          [ (== `[(nat 1) [,a ,b]] i) 
+            (nouno a) (nouno b)                 (== a o) ]
+          [ (== `[,ind [,b ,c]] i)
+            (nouno b) (nouno c)
+            (nadd1o ind n) (npluso a a ind) 
+	    (haxo `[,a [[,b ,res] ,c]] o) (faso `[,n ,c] res) ] ;TODO: determine ordering that produces reverse synthesis
+          [ (== `[,ind [,b ,c]] i)
+            (nouno b) (nouno c)
+            (nadd1o n ind) (npluso a a n) 
+	    (haxo `[,a [[,b ,res] ,c]] o) (faso `[,n ,c] res) ]
+          )))
+
+#|
+#a
+a: atom -> |_
+a: cell -> #[b c]
+ c: atom -> |_
+ c: cell -> #[b [d e]]
+  b: cell -> |_
+  b: atom ->
+   b: 0 -> |_
+   b: >0 -> T
+{ potentially necessary for deeper structure analysis, but any failure to unify out be an empty failure, rather than divergence
+   b: even -> T 
+   b: odd -> T
+ } 
+|#
 
 (define (taro i o) "")
+
+(define (raso i o)
+  ""
+  )
 
 #|
 (define (nevalo i o)
