@@ -166,39 +166,114 @@ a: cell -> #[b c]
  } 
 |#
 
-(define (taro i o) "")
-
-(define (raso i o)
+(define (taro i o) 
+;  (fresh (a b))
   ""
   )
 
+#;(define (raso i o)
+  ""
+  )
+
+#;(define (raso i o)
+		(fresh (a b c)
+		(conde
+		 [ (nouno i) (== i o) ]
+		 [ (== `[,a ,b . ,c] i) (=/= '() c) ]
+		 )))
+(define (raso i o)
+  (fresh (a b c d e resa resb resc resd)
+         (conde
+          [ (atomo i) (== i o) ] ;single term, atomic
+          [ (== `[,a ,b . ,c] i) 
+            (== `(,d . ,e) c) (=/= '() e) ;complex c, more than three terms
+	    (=/= 'nat d) ;do not capture an unenclosed nat
+            (raso a resa) (raso b resb) (raso c resc) 
+            (== `[,resa [,resb ,resc]] o) 
+            ;(== `(a=,a b=,b c=,c d=,d e=,e resa=,resa resb=,resb resc=,resc) o)
+            ]
+          [ (== `[,a ,b . ,c] i) 
+            (== `(,d . ()) c) ;simple c, three terms
+	    (raso a resa) (raso b resb) (raso d resd)             
+            (== `[,resa [,resb ,resd]] o) 
+            ]
+          [ (== `[,a ,b . ,c] i) 
+            (== '() c) ;empty c, two terms
+            (raso a resa) (raso b resb)
+            (== `[,resa ,resb] o) ]
+          )))
+
 #|
-(define (nevalo i o)
-  (fresh (a b neg)
-	 (noun a) (noun b)
-	 (conde
-	  [(== `(tar (,a ((nat 0) ,b))) i)
-	   (== `(fas (,b ,a)) o)]
-	  #;[(nexp i neg)
-	   (=/= 't neg)]
-	  ))
+TODO: cause reverse synthesis to converge during run*, and during complex reverse synthesis checks
+
+racket@nocko> (run 1 (q) (raso q '[(nat 0) [(nat 0) (nat 0)]]))
+'(((nat 0) (nat 0) (nat 0)))
+racket@nocko> (run 2 (q) (raso q '[(nat 0) [(nat 0) (nat 0)]]))
+'(((nat 0) (nat 0) (nat 0)) ((nat 0) ((nat 0) (nat 0))))
+racket@nocko> (run 3 (q) (raso q '[(nat 0) [(nat 0) (nat 0)]]))
+user break
+racket@nocko> (run* (q) (raso q '[(nat 0) [(nat 0) (nat 0)]]))
+user break
+racket@nocko> 
 |#
 
 #|
-(define (nexp i o)
-  (fresh (a b)
-;	 (noun a) (noun b)
-	 (conde
-	  [(== `(tar (,a ((nat 0) ,b))) i)
-	   (== 't o)])))   
+`raso` constraint early to avoid divergence.
+racket@nocko> (run 1 (p q) 
+		   (cello q)
+		   (raso p q)
+		   (=/= p q))
+user break
+racket@nocko> (run 1 (p q) 
+		   (raso p q)
+		   (cello q)
+		   (=/= p q))
+'((((nat 0) (nat 0) (nat 0)) ((nat 0) ((nat 0) (nat 0)))))
+racket@nocko> (run 1 (p q) 
+		   (raso p q)
+		   (=/= p q)
+		   (cello q))
+'((((nat 0) (nat 0) (nat 0)) ((nat 0) ((nat 0) (nat 0)))))
+racket@nocko> (run 10 (p q) 
+		   (raso p q)
+		   (=/= p q)
+		   (cello q))
+'((((nat 0) (nat 0) (nat 0)) ((nat 0) ((nat 0) (nat 0))))
+  (((nat 0) (nat 0) (nat 1)) ((nat 0) ((nat 0) (nat 1))))
+  (((nat 0) (nat 1) (nat 0)) ((nat 0) ((nat 1) (nat 0))))
+  (((nat 0) (nat 0) (nat 0 1)) ((nat 0) ((nat 0) (nat 0 1))))
+  (((nat 0) (nat 0) (nat 1 1)) ((nat 0) ((nat 0) (nat 1 1))))
+  (((nat 0) (nat 1) (nat 1)) ((nat 0) ((nat 1) (nat 1))))
+  (((nat 0) (nat 0) (nat 0 0 1)) ((nat 0) ((nat 0) (nat 0 0 1))))
+  (((nat 0) (nat 0) (nat 1 0 1)) ((nat 0) ((nat 0) (nat 1 0 1))))
+  (((nat 0) (nat 1) (nat 0 1)) ((nat 0) ((nat 1) (nat 0 1))))
+  (((nat 0) (nat 0) (nat 0 1 1)) ((nat 0) ((nat 0) (nat 0 1 1)))))
+racket@nocko> 
 |#
 
 #|
+(raso i)
 
+i: atom -> T
+i: [a b] ->
+ a: atom -> T
+ a: list -> T
+ 
+
+
+|#
+
+#|
+*a
+a: atom -> |_
+a: cell -> *[b c]
+ b: 
+
+*a
 a: noun ->
 a: atom -> |_
 a: cell -> 
-[b c]
+*[b c]
   b: noun -> T
 c: atom -> |_
 c: cell -> 
@@ -258,6 +333,27 @@ d: 11 ->
   e: atom -> |_
   e: cell -> [b [11 [f g]]] -> T
 
+|#
+
+#|
+(define (nevalo i o)
+  (fresh (a b neg)
+	 (noun a) (noun b)
+	 (conde
+	  [(== `(tar (,a ((nat 0) ,b))) i)
+	   (== `(fas (,b ,a)) o)]
+	  #;[(nexp i neg)
+	   (=/= 't neg)]
+	  ))
+|#
+
+#|
+(define (nexp i o)
+  (fresh (a b)
+;	 (noun a) (noun b)
+	 (conde
+	  [(== `(tar (,a ((nat 0) ,b))) i)
+	   (== 't o)])))   
 |#
 
 (define (npluso m n o) 
