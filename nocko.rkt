@@ -64,7 +64,11 @@
 ;We begin with a monolithic `nocko` relation, using pattern matching
 ;on quoted expressions to perform the redexes.
 
-(define (nocko i o) (taro i o))
+;(this is actually the functional nocko)
+(define (nocko i o) 
+  (fresh (a)
+         (raso i a)
+         (taro a o)))
 
 (define (wuto i o)
   (fresh (a b)
@@ -167,20 +171,119 @@ a: cell -> #[b c]
 |#
 
 (define (taro i o) 
-;  (fresh (a b))
-  ""
-  )
+  (fresh (a b c d resa resb resc)
+         (conde
+          [ (== `[,a [[,b ,c] ,d]] i) 
+            (taro `[,a [,b ,c]] resa) 
+            (taro `[,a ,d] resb)                                 (== `[,resa ,resb] o) ]
 
-#;(define (raso i o)
-  ""
-  )
+          [ (== `[,a [(nat 0) ,b]] i)                            (faso `[,b ,a] o) ]
+          [ (== `[,a [(nat 1) ,b]] i)                            (== b o) ]
+          [ (== `[,a [(nat 0 1) [,b ,c]]] i) 
+            (taro `[,a ,b] resa)
+            (taro `[,a ,c] resb)                                 (taro `[,resa ,resb] o) ]
+          [ (== `[,a [(num 1 1) ,b]] i) 
+            (taro `[,a ,b] resa)                                 (wuto resa o) ]
+          [ (== `[,a [(num 0 0 1) ,b]] i)
+            (taro `[,a ,b] resa)                                 (luso resa o) ]
+          [ (== `[,a [(num 1 0 1) [,b ,c]]] i) 
+            (taro `[,a ,b] resa)
+            (taro `[,a ,c] resb)                                 (tiso `[,resa ,resb] o) ]
 
-#;(define (raso i o)
-		(fresh (a b c)
-		(conde
-		 [ (nouno i) (== i o) ]
-		 [ (== `[,a ,b . ,c] i) (=/= '() c) ]
-		 )))
+          [ (== `[,a [(num 0 1 1) [,b [,c ,d]]]] i) 
+            (taro `[,a [(num 0 0 1) [num (0 0 1) ,b]]] resa)
+            (taro `[[(num 0 1) (num 1 1)] [(num 0) ,resa]] resb)
+            (taro `[[,c ,d] [(num 0) ,resb]] resc)
+                                                                 (taro `[,a ,resc] o) ]
+          [ (== `[,a [(num 1 1 1) [,b ,c]]] i) 
+            (taro `[,a ,b] resa)                                 (taro `[,resa ,c] o) ]
+          [ (== `[,a [(num 0 0 0 1) [,b ,c]]] i) 
+            (taro `[,a ,b] resa)                                 (taro `[[,resa ,a] ,c] o) ]
+          [ (== `[,a [(num 1 0 0 1) [,b ,c]]] i) 
+            (taro `[,a ,c] resa)                                 (taro `[,resa [(num 0 1) [[(num 0) (num 1)] [(num 0) ,b]]]] o) ]
+          [ (== `[,a [(num 0 1 0 1) [[,b ,c] ,d]]] i) 
+            (taro `[,a ,c] resa)
+            (taro `[,a ,d] resb)                                 (haxo `[,b [,resa ,resb]] o) ]
+          
+          [ (== `[,a [(num 1 1 0 1) [[,b ,c] ,d]]] i)
+            (taro `[,a ,c] resa)
+            (taro `[,a ,d] resb)                                 (taro `[[,resa ,resb] [(num 0) (num 3)]] o) ]
+          [ (== `[,a [(num 1 1 0 1) [,b ,c]]] i)                 (taro `[,a ,c] o) ]
+          )))
+
+
+#|
+*a
+a: atom -> |_
+a: cell -> *[b c]
+ b: 
+
+*a
+a: noun ->
+a: atom -> |_
+a: cell -> 
+*[b c]
+  b: noun -> T
+c: atom -> |_
+c: cell -> 
+[b [d e]]
+    d: atom >=12 -> |_
+  d: cell -> [b [[f g] e]] -> T
+d: atom <12 -> T
+d: 0 -> 
+  e: noun -> T
+d: 1 -> 
+  e: noun -> T
+d: 2 ->
+  e: atom -> |_
+e: cell -> T
+d: 3 -> 
+  e: noun -> T
+d: 4 -> 
+  e: nount -> T
+d: 5 -> 
+  e: atom -> |_
+  e: cell -> [b [7 [f g]]] -> T
+e: cell -> T
+d: 6 ->
+  e: atom -> |_
+e: cell -> [b [6 [f g]]]
+  f: noun -> T
+g: atom -> |_
+g: cell -> [b [6 [f [h i]]]]
+  h: noun -> T
+  i: noun -> T
+d: 7 ->
+  e: atom -> |_
+  e: cell -> [b [7 [f g]]] -> T
+d: 8 ->
+  e: atom -> |_
+  e: cell -> [b [8 [f g]]] -> T
+d: 9 ->
+  e: atom -> |_
+  e: cell -> [b [9 [f g]]] -> T
+d: 10 ->
+  e: atom -> |_
+  e: cell -> [b [10 [f g]]]
+    g: noun -> T
+  f: atom -> |_
+     cell -> [b [10 [[h i] g]]]
+    h: noun -> T
+    i: noun -> T
+d: 11 ->
+  e: atom -> |_
+  e: cell -> [b [11 [f g]]]
+    g: noun -> T
+  f: atom -> |_
+     cell -> [b [11 [[h i] g]]]
+    h: noun -> T
+    i: noun -> T
+d: 11 ->
+  e: atom -> |_
+  e: cell -> [b [11 [f g]]] -> T
+
+|#
+
 (define (raso i o)
   (fresh (a b c d e resa resb resc resd)
          (conde
@@ -258,82 +361,8 @@ i: atom -> T
 i: [a b] ->
  a: atom -> T
  a: list -> T
- 
-
-
 |#
 
-#|
-*a
-a: atom -> |_
-a: cell -> *[b c]
- b: 
-
-*a
-a: noun ->
-a: atom -> |_
-a: cell -> 
-*[b c]
-  b: noun -> T
-c: atom -> |_
-c: cell -> 
-[b [d e]]
-    d: atom >=12 -> |_
-  d: cell -> [b [[f g] e]] -> T
-d: atom <12 -> T
-d: 0 -> 
-  e: noun -> T
-d: 1 -> 
-  e: noun -> T
-d: 2 ->
-  e: atom -> |_
-e: cell -> T
-d: 3 -> 
-  e: noun -> T
-d: 4 -> 
-  e: nount -> T
-d: 5 -> 
-  e: atom -> |_
-  e: cell -> [b [7 [f g]]] -> T
-e: cell -> T
-d: 6 ->
-  e: atom -> |_
-e: cell -> [b [6 [f g]]]
-  f: noun -> T
-g: atom -> |_
-g: cell -> [b [6 [f [h i]]]]
-  h: noun -> T
-  i: noun -> T
-d: 7 ->
-  e: atom -> |_
-  e: cell -> [b [7 [f g]]] -> T
-d: 8 ->
-  e: atom -> |_
-  e: cell -> [b [8 [f g]]] -> T
-d: 9 ->
-  e: atom -> |_
-  e: cell -> [b [9 [f g]]] -> T
-d: 10 ->
-  e: atom -> |_
-  e: cell -> [b [10 [f g]]]
-    g: noun -> T
-  f: atom -> |_
-     cell -> [b [10 [[h i] g]]]
-    h: noun -> T
-    i: noun -> T
-d: 11 ->
-  e: atom -> |_
-  e: cell -> [b [11 [f g]]]
-    g: noun -> T
-  f: atom -> |_
-     cell -> [b [11 [[h i] g]]]
-    h: noun -> T
-    i: noun -> T
-d: 11 ->
-  e: atom -> |_
-  e: cell -> [b [11 [f g]]] -> T
-
-|#
 
 #|
 (define (nevalo i o)
