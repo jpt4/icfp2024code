@@ -209,8 +209,17 @@ a: cell -> #[b c]
             (taro `[,a ,c] resa)
             (taro `[,a ,d] resb)                                 (taro `[[,resa ,resb] [(num 0) (num 3)]] o) ]
           [ (== `[,a [(num 1 1 0 1) [,b ,c]]] i)                 (taro `[,a ,c] o) ]
+
+;          [ (numo i) (== 'tar-err o) ]
+          ;[ (== `[,a . ,b] i) (== 'nat a) (== 1 2) ]
           )))
 
+(define (numo n)
+  (fresh (a b c)
+         (conde
+          [(== '(num ()) n)]
+          [(== '(num (1)) n)]
+          [(>1o a) (== `(num ,a) n)])))
 
 #|
 *a
@@ -218,17 +227,20 @@ a: atom -> |_
 a: cell -> *[b c]
  b: 
 
+TODO: instrument taro-diag, check that no case matches two RHS patterns.
+
+noun shape case analysis: any case which yields |_ should fail, cases yielding T may fail later in evaluation.
 *a
 a: noun ->
-a: atom -> |_
+  a: atom -> |_
 a: cell -> 
 *[b c]
   b: noun -> T
 c: atom -> |_
 c: cell -> 
-[b [d e]]
+*[b [d e]]
     d: atom >=12 -> |_
-  d: cell -> [b [[f g] e]] -> T
+  d: cell -> *[b [[f g] e]] -> T
 d: atom <12 -> T
 d: 0 -> 
   e: noun -> T
