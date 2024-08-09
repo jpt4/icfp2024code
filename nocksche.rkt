@@ -499,6 +499,60 @@ nexps. Thus, this layer of indirection/abstraction is unncessary.
     
     (test 'tar1-atom (tar '[0 [1 2]]) 2)
     (test 'tar1-cell (tar '[0 [1 [2 3]]]) '[2 3])
+))
+
+#|
+Nock 4K quine
+
+nock(a) -> a ;technically, all non-reducible nock expression are quines, if you all evaluation of NIRs.
+
+*[a [b c] d]
+[*[a b c] *[a d]]
+d=[0 index]
+[*[a b c] *[a 0 index]]
+[*[a b c] /[index a]] - no
+
+*[a [b c] d]
+[*[a b c] *[a d]]
+[b c]=[0 1]
+[*[a 0 1] *[a d]]
+[/[1 a] *[a d]]
+[a *[a d]]
+d=[[e f] g]
+[a *[a [[e f] g]]]
+[a [*[a e f] *[a g]]]
+[e f]=[0 bcindex]
+[a [*[a [0 bcindex]] *[a g]]]
+[a [/[bcindex a] *[a g]]]
+[bcindex a]=[2 [[b c] h]]
+bcindex=2
+a=[[b c] h]
+[a [/[2 [[b c] h]] *[[[b c] h] g]]]
+[a [[b c] *[[[b c] h] g]]]
+g=[0 dindex]
+[a [[b c] *[[[b c] h] [0 dindex]]]]
+[a [[b c] /[dindex [[b c] h]]]]
+dindex=3
+[a [[b c] /[3 [[b c] h]]]]
+[a [[b c] h]]
+h=d=[[e f] g]=[[0 bcindex] g]=[[0 2] g]=[[0 2] [0 dindex]]=[[0 2] [0 3]]
+h=d=[[0 2] [0 3]]
+[b c]=[0 1]
+a=[[b c] h]=[[0 1] h]=[[0 1] [[0 2] [0 3]]]
+a=[[0 1] [[0 2] [0 3]]]
+
+[a [b c] d]=
+[[[0 1] [[0 2] [0 3]]] [0 1] [[0 2] [0 3]]]
+
+|#
+(define quine4k '[[[0 1] [[0 2] [0 3]]] [[0 1] [[0 2] [0 3]]]])
+
+#|
+racket@nocksche> (equal? (ras quine4k) (nock quine4k))
+#t
+racket@nocksche> (equal? quine4k (nock quine4k))
+#t
+|#
 
     ;term rewrite tests
 #|
@@ -526,4 +580,4 @@ nocksche.rkt> (nexp 0)
 nocksche.rkt> 
 |#    
 
-    )) 
+

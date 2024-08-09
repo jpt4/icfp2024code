@@ -221,6 +221,24 @@ a: cell -> #[b c]
           [(== '(num (1)) n)]
           [(>1o a) (== `(num ,a) n)])))
 
+(define quineo4k '[[[(nat 0) (nat 1)] [[(nat 0) (nat 0 1)] [(nat 0) (nat 1 1)]]] [[(nat 0) (nat 1)] [[(nat 0) (nat 0 1)] [(nat 0) (nat 1 1)]]]])
+
+#|
+racket@nocko> (run 1 (q) (nocko quineo4k quineo4k))
+'(_.0)
+racket@nocko> (run 1 (q) (nocko quineo4k q))
+'(((((nat 0) (nat 1)) (((nat 0) (nat 0 1)) ((nat 0) (nat 1 1))))
+   (((nat 0) (nat 1)) (((nat 0) (nat 0 1)) ((nat 0) (nat 1 1))))))
+racket@nocko> quineo4k
+'((((nat 0) (nat 1)) (((nat 0) (nat 0 1)) ((nat 0) (nat 1 1))))
+  (((nat 0) (nat 1)) (((nat 0) (nat 0 1)) ((nat 0) (nat 1 1)))))
+racket@nocko> (car (run 1 (q) (nocko quineo4k q)))
+'((((nat 0) (nat 1)) (((nat 0) (nat 0 1)) ((nat 0) (nat 1 1))))
+  (((nat 0) (nat 1)) (((nat 0) (nat 0 1)) ((nat 0) (nat 1 1)))))
+racket@nocko> (equal? quineo4k (car (run 1 (q) (nocko quineo4k q))))
+#t
+|#
+
 #|
 *a
 a: atom -> |_
