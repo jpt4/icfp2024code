@@ -8,6 +8,8 @@
 (require racket/match) ;while Racket match requires a library, minikanren provides pattern match facilities natively. Depending on one's measure of code complexity, this may or not be an advantage.
 (require string-interpolation)
 
+; Does the spec match this claim? Since this is not a tutorial on Nock, but an exploration, or rather an interrogation of Nock using Scheme, I will not work through every reduction rule, but am happy to discuss the calculus itself further later.
+
 ;prior work:
 ;https://github.com/nvasilakis/Noq/commit/5e8c9fbeec13450d7d712c6a0c520f652031a27f
 ;https://github.com/runtimeverification/knock/blob/master/k-src/nock.k - lifts the right associativity rule to the type/hand-crafted heuristics level
@@ -502,9 +504,6 @@ nexps. Thus, this layer of indirection/abstraction is unncessary.
 ))
 
 #|
-Nock 4K quine
-
-nock(a) -> a ;technically, all non-reducible nock expression are quines, if you all evaluation of NIRs.
 
 *[a [b c] d]
 [*[a b c] *[a d]]
@@ -512,7 +511,13 @@ d=[0 index]
 [*[a b c] *[a 0 index]]
 [*[a b c] /[index a]] - no
 
-*[a [b c] d]
+Nock 4K quine
+
+nock(a) -> a ;technically, all non-reducible nock expression are quines, if you allow evaluation of NIRs.
+
+a->a
+
+*[a [[b c] d]]
 [*[a b c] *[a d]]
 [b c]=[0 1]
 [*[a 0 1] *[a d]]
